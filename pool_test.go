@@ -17,6 +17,7 @@ var (
 )
 
 func init() {
+	// used for factory function
 	go simpleTCPServer()
 	time.Sleep(time.Millisecond * 300) // wait until tcp server has been settled
 
@@ -69,7 +70,11 @@ func TestPool_Put(t *testing.T) {
 		t.Errorf("Put, get error: %s", err)
 	}
 
-	testPool.Put(conn)
+	err = testPool.Put(conn)
+	if err != nil {
+		t.Errorf("Put error: %s", err)
+	}
+
 	if testPool.UsedCapacity() != 1 {
 		t.Errorf("Put error. Expecting %d, got %d",
 			1, testPool.UsedCapacity())
@@ -77,13 +82,16 @@ func TestPool_Put(t *testing.T) {
 }
 
 func TestPool_MaximumCapacity(t *testing.T) {
-	if testPool.MaximumCapacity() != MaximumCap {
+	// Create new pool to test it
+	p, _ := newPool()
+	if p.MaximumCapacity() != MaximumCap {
 		t.Errorf("MaximumCapacity error. Expecting %d, got %d",
 			MaximumCap, testPool.UsedCapacity())
 	}
 }
 
 func TestPool_UsedCapacity(t *testing.T) {
+	// Create new pool to test it
 	p, _ := newPool()
 	if p.UsedCapacity() != InitialCap {
 		t.Errorf("InitialCap error. Expecting %d, got %d",
@@ -91,12 +99,25 @@ func TestPool_UsedCapacity(t *testing.T) {
 	}
 }
 
-func TestPool_Close(t *testing.T) {
-	testPool.Close()
+func TestPool_Destroy(t *testing.T) {
+	testPool.Destroy()
 
 	conn, _ := testPool.Get()
 	if conn != nil {
-		t.Errorf("Close error, conn should be nil")
+		t.Errorf("Destroy error, conn should be nil")
+	}
+
+	err := testPool.Put(conn)
+	if err == nil {
+		t.Errorf("Destroy error, err should be nil: %s", err)
+	}
+
+	if testPool.UsedCapacity() != 0 {
+		t.Errorf("Destroy error used capacity. Expecting 0, got %d", testPool.MaximumCapacity())
+	}
+
+	if testPool.MaximumCapacity() != 0 {
+		t.Errorf("Destroy error max capacity. Expecting 0, got %d", testPool.MaximumCapacity())
 	}
 }
 
