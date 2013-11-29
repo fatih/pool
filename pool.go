@@ -92,7 +92,7 @@ func (p *Pool) Put(conn net.Conn) {
 	}
 }
 
-// Close destroys the pool and close all connections. After Destroy() the
+// Close closes the pool and all its connections. After Close() the
 // pool is no longer usable.
 func (p *Pool) Close() {
 	p.mu.Lock()
