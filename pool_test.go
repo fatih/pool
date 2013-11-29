@@ -3,6 +3,7 @@ package pool
 import (
 	"log"
 	"net"
+	"sync"
 	"testing"
 	"time"
 )
@@ -47,12 +48,10 @@ func TestPool_Get(t *testing.T) {
 	}
 
 	for i := 0; i < (InitialCap - 1); i++ {
-		go func() {
-			_, err := testPool.Get()
-			if err != nil {
-				t.Errorf("Get error: %s", err)
-			}
-		}()
+		_, err := testPool.Get()
+		if err != nil {
+			t.Errorf("Get error: %s", err)
+		}
 	}
 
 	if testPool.UsedCapacity() != 0 {
@@ -123,6 +122,38 @@ func TestPool_Destroy(t *testing.T) {
 	}
 }
 
+func TestPoolConcurrent(t *testing.T) {
+	p, _ := newPool()
+
+	var wg sync.WaitGroup
+
+	for i := 0; i < MaximumCap; i++ {
+		var conn net.Conn
+		var err error
+
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			conn, err = p.Get()
+			if err != nil {
+				t.Errorf("Get error: %s", err)
+			}
+		}()
+
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			err := p.Put(conn)
+			if err != nil {
+				t.Errorf("Get error: %s", err)
+			}
+		}()
+	}
+
+	wg.Wait()
+
+}
+
 func newPool() (*Pool, error) { return New(InitialCap, MaximumCap, factory) }
 
 func simpleTCPServer() {
@@ -139,7 +170,6 @@ func simpleTCPServer() {
 		}
 
 		buffer := make([]byte, 256)
-		n, err := conn.Read(buffer)
-		log.Println(n, err)
+		conn.Read(buffer)
 	}
 }

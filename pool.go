@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"sync"
 )
 
 // Factory is a function to create new connections.
@@ -20,6 +21,8 @@ type Pool struct {
 
 	// to prevent access to closed channels
 	isDestroyed bool
+
+	mu sync.Mutex // protects isDesroyed field
 }
 
 // New returns a new pool with an initial capacity and maximum capacity.
@@ -35,14 +38,31 @@ func New(initialCap, maxCap int, factory Factory) (*Pool, error) {
 		factory: factory,
 	}
 
+	bufferedConn := make([]net.Conn, initialCap)
+	closeConns := func() {
+		for _, conn := range bufferedConn {
+			conn.Close()
+		}
+	}
+
+	// create initial connections and buffer all successfull connections, if
+	// something goes wrong, close them all via closeConns().
 	for i := 0; i < initialCap; i++ {
 		conn, err := factory()
 		if err != nil {
+			closeConns()
 			return nil, fmt.Errorf("factory is not able to fill the pool: %s", err)
 		}
 
+		bufferedConn[i] = conn
+	}
+
+	// if everything goes right, send the connections to our pool
+	for _, conn := range bufferedConn {
 		p.conns <- conn
 	}
+
+	bufferedConn = nil
 
 	return p, nil
 }
@@ -52,9 +72,12 @@ func New(initialCap, maxCap int, factory Factory) (*Pool, error) {
 // available in the pool, a new connection will be created via the Factory()
 // method.
 func (p *Pool) Get() (net.Conn, error) {
+	p.mu.Lock()
 	if p.isDestroyed {
+		p.mu.Unlock()
 		return nil, errors.New("pool is destroyed")
 	}
+	p.mu.Unlock()
 
 	select {
 	case conn := <-p.conns:
@@ -67,9 +90,12 @@ func (p *Pool) Get() (net.Conn, error) {
 // Put puts a new connection into the pool. If the pool is full, conn is
 // discarded and a warning is output to stderr.
 func (p *Pool) Put(conn net.Conn) error {
+	p.mu.Lock()
 	if p.isDestroyed {
+		p.mu.Unlock()
 		return errors.New("pool is destroyed")
 	}
+	p.mu.Unlock()
 
 	select {
 	case p.conns <- conn:
@@ -82,10 +108,24 @@ func (p *Pool) Put(conn net.Conn) error {
 // Destroy destroys the pool and close all connections. After Destroy() the
 // pool is no longer usable.
 func (p *Pool) Destroy() {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
 	if p.isDestroyed {
 		return
 	}
 
+	// close all connections
+	for i := 0; i < p.MaximumCapacity(); i++ {
+		select {
+		case conn := <-p.conns:
+			conn.Close()
+		default:
+			continue
+		}
+	}
+
+	// reset variables, make them unusable.
 	close(p.conns)
 	p.conns = nil
 	p.factory = nil
