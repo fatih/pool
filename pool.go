@@ -92,11 +92,11 @@ func (p *Pool) Put(conn net.Conn) {
 	}
 }
 
-// Destroy destroys the pool and close all connections. After Destroy() the
+// Close destroys the pool and close all connections. After Destroy() the
 // pool is no longer usable.
 func (p *Pool) Close() {
 	p.mu.Lock()
-	conns := p.getConns()
+	conns := p.conns
 	p.conns = nil
 	p.factory = nil
 	p.mu.Unlock()
