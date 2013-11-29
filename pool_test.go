@@ -47,10 +47,12 @@ func TestPool_Get(t *testing.T) {
 	}
 
 	for i := 0; i < (InitialCap - 1); i++ {
-		_, err := testPool.Get()
-		if err != nil {
-			t.Errorf("Get error: %s", err)
-		}
+		go func() {
+			_, err := testPool.Get()
+			if err != nil {
+				t.Errorf("Get error: %s", err)
+			}
+		}()
 	}
 
 	if testPool.UsedCapacity() != 0 {
