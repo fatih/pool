@@ -47,12 +47,19 @@ func TestPool_Get(t *testing.T) {
 			(InitialCap - 1), testPool.UsedCapacity())
 	}
 
+	var wg sync.WaitGroup
 	for i := 0; i < (InitialCap - 1); i++ {
-		_, err := testPool.Get()
-		if err != nil {
-			t.Errorf("Get error: %s", err)
-		}
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			_, err := testPool.Get()
+			if err != nil {
+				t.Errorf("Get error: %s", err)
+			}
+		}()
 	}
+
+	wg.Wait()
 
 	if testPool.UsedCapacity() != 0 {
 		t.Errorf("Get error. Expecting %d, got %d",
@@ -124,34 +131,24 @@ func TestPool_Destroy(t *testing.T) {
 
 func TestPoolConcurrent(t *testing.T) {
 	p, _ := newPool()
+	pipe := make(chan net.Conn, 0)
 
-	var wg sync.WaitGroup
+	go func() {
+		p.Destroy()
+	}()
 
 	for i := 0; i < MaximumCap; i++ {
-		var conn net.Conn
-		var err error
-
-		wg.Add(1)
 		go func() {
-			defer wg.Done()
-			conn, err = p.Get()
-			if err != nil {
-				t.Errorf("Get error: %s", err)
-			}
+			conn, _ := p.Get()
+
+			pipe <- conn
 		}()
 
-		wg.Add(1)
 		go func() {
-			defer wg.Done()
-			err := p.Put(conn)
-			if err != nil {
-				t.Errorf("Get error: %s", err)
-			}
+			conn := <-pipe
+			p.Put(conn)
 		}()
 	}
-
-	wg.Wait()
-
 }
 
 func newPool() (*Pool, error) { return New(InitialCap, MaximumCap, factory) }
