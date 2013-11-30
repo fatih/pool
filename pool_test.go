@@ -145,6 +145,23 @@ func TestPoolConcurrent(t *testing.T) {
 	}
 }
 
+func TestPoolConcurrent2(t *testing.T) {
+	p, _ := newPool()
+
+	for i := 0; i < MaximumCap; i++ {
+		conn, _ := p.factory()
+		p.Put(conn)
+	}
+
+	for i := 0; i < MaximumCap; i++ {
+		go func() {
+			p.Get()
+		}()
+	}
+
+	p.Close()
+}
+
 func newPool() (*Pool, error) { return New(InitialCap, MaximumCap, factory) }
 
 func simpleTCPServer() {
