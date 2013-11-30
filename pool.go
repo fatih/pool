@@ -14,16 +14,14 @@ type Factory func() (net.Conn, error)
 // Pool allows you to use a pool of net.Conn connections.
 type Pool struct {
 	// storage for our net.Conn connections
+	mu sync.Mutex
 	conns chan net.Conn
 
 	// net.Conn generator
 	factory Factory
 
-	// to prevent access to closed channels
-	isDestroyed bool
-
-	mu sync.Mutex // protects isDesroyed field
 }
+
 
 // New returns a new pool with an initial capacity and maximum capacity.
 // Factory is used when initial capacity is greater then zero to fill the
@@ -38,33 +36,25 @@ func New(initialCap, maxCap int, factory Factory) (*Pool, error) {
 		factory: factory,
 	}
 
-	bufferedConn := make([]net.Conn, initialCap)
-	closeConns := func() {
-		for _, conn := range bufferedConn {
-			conn.Close()
-		}
-	}
-
-	// create initial connections and buffer all successfull connections, if
-	// something goes wrong, close them all via closeConns().
+	// create initial connections, if something goes wrong,
+	// just close the pool error out.
 	for i := 0; i < initialCap; i++ {
 		conn, err := factory()
 		if err != nil {
-			closeConns()
+			p.Close()
 			return nil, fmt.Errorf("factory is not able to fill the pool: %s", err)
 		}
-
-		bufferedConn[i] = conn
-	}
-
-	// if everything goes right, send the connections to our pool
-	for _, conn := range bufferedConn {
 		p.conns <- conn
 	}
 
-	bufferedConn = nil
-
 	return p, nil
+}
+
+func (p *Pool) getConns() chan net.Conn {
+	p.mu.Lock()
+	conns := p.conns
+	p.mu.Unlock()
+	return conns
 }
 
 // Get returns a new connection from the pool. After using the connection it
@@ -72,68 +62,72 @@ func New(initialCap, maxCap int, factory Factory) (*Pool, error) {
 // available in the pool, a new connection will be created via the Factory()
 // method.
 func (p *Pool) Get() (net.Conn, error) {
-	p.mu.Lock()
-	if p.isDestroyed {
-		p.mu.Unlock()
-		return nil, errors.New("pool is destroyed")
+	conns := p.getConns()
+	if conns == nil  {
+		return nil, errors.New("pool is closed")
 	}
-	p.mu.Unlock()
 
 	select {
-	case conn := <-p.conns:
+	case conn := <-conns:
+		if conn == nil {
+			return nil, errors.New("pool is closed")
+		}
 		return conn, nil
 	default:
-		return p.factory()
+	}
+	return p.factory()
+}
+
+// Put puts an existing connection into the pool. If the pool is full or closed, conn is
+// simply closed.
+func (p *Pool) Put(conn net.Conn) {
+	if conn == nil {
+		return
+	}
+	if !p.put(conn) {
+		conn.Close()
 	}
 }
 
-// Put puts a new connection into the pool. If the pool is full, conn is
-// discarded and a warning is output to stderr.
-func (p *Pool) Put(conn net.Conn) error {
+func (p *Pool) put(conn net.Conn) bool {
 	p.mu.Lock()
-	if p.isDestroyed {
-		p.mu.Unlock()
-		return errors.New("pool is destroyed")
+	defer p.mu.Unlock()
+	if p.conns == nil  {
+		return false
 	}
-	p.mu.Unlock()
 
 	select {
 	case p.conns <- conn:
-		return nil
+		return true
 	default:
-		return errors.New("attempt to put into a full pool")
+	}
+	return false
+}
+
+// Close closes the pool and all its connections. After Close() the
+// pool is no longer usable.
+func (p *Pool) Close() {
+	conns := p.closePool()
+	if conns == nil {
+		return
+	}
+	close(conns)
+	for conn := range conns {
+		conn.Close()
 	}
 }
 
-// Destroy destroys the pool and close all connections. After Destroy() the
-// pool is no longer usable.
-func (p *Pool) Destroy() {
+func (p *Pool) closePool() chan net.Conn {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-
-	if p.isDestroyed {
-		return
-	}
-
-	// close all connections
-	for i := 0; i < p.MaximumCapacity(); i++ {
-		select {
-		case conn := <-p.conns:
-			conn.Close()
-		default:
-			continue
-		}
-	}
-
-	// reset variables, make them unusable.
-	close(p.conns)
+	conns := p.conns
 	p.conns = nil
 	p.factory = nil
-	p.isDestroyed = true
+	return conns
 }
 
 // MaximumCapacity returns the maximum capacity of the pool
-func (p *Pool) MaximumCapacity() int { return cap(p.conns) }
+func (p *Pool) MaximumCapacity() int { return cap(p.getConns()) }
 
 // UsedCapacity returns the used capacity of the pool.
-func (p *Pool) UsedCapacity() int { return len(p.conns) }
+func (p *Pool) UsedCapacity() int { return len(p.getConns()) }

@@ -78,10 +78,7 @@ func TestPool_Put(t *testing.T) {
 		t.Errorf("Put, get error: %s", err)
 	}
 
-	err = testPool.Put(conn)
-	if err != nil {
-		t.Errorf("Put error: %s", err)
-	}
+	testPool.Put(conn)
 
 	if testPool.UsedCapacity() != 1 {
 		t.Errorf("Put error. Expecting %d, got %d",
@@ -107,25 +104,22 @@ func TestPool_UsedCapacity(t *testing.T) {
 	}
 }
 
-func TestPool_Destroy(t *testing.T) {
-	testPool.Destroy()
+func TestPool_Close(t *testing.T) {
+	testPool.Close()
 
 	conn, _ := testPool.Get()
 	if conn != nil {
-		t.Errorf("Destroy error, conn should be nil")
+		t.Errorf("Close error, conn should be nil")
 	}
 
-	err := testPool.Put(conn)
-	if err == nil {
-		t.Errorf("Destroy error, err should be nil: %s", err)
-	}
+	testPool.Put(conn)
 
 	if testPool.UsedCapacity() != 0 {
-		t.Errorf("Destroy error used capacity. Expecting 0, got %d", testPool.MaximumCapacity())
+		t.Errorf("Close error used capacity. Expecting 0, got %d", testPool.MaximumCapacity())
 	}
 
 	if testPool.MaximumCapacity() != 0 {
-		t.Errorf("Destroy error max capacity. Expecting 0, got %d", testPool.MaximumCapacity())
+		t.Errorf("Close error max capacity. Expecting 0, got %d", testPool.MaximumCapacity())
 	}
 }
 
@@ -134,7 +128,7 @@ func TestPoolConcurrent(t *testing.T) {
 	pipe := make(chan net.Conn, 0)
 
 	go func() {
-		p.Destroy()
+		p.Close()
 	}()
 
 	for i := 0; i < MaximumCap; i++ {
