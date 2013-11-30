@@ -1,4 +1,5 @@
-# Pool [![GoDoc](https://godoc.org/github.com/fatih/pool?status.png)](http://godoc.org/github.com/fatih/pool)
+# Pool [![GoDoc](https://godoc.org/github.com/fatih/pool?status.png)](http://godoc.org/github.com/fatih/pool) [![Build Status](https://travis-ci.org/fatih/pool.png)](https://travis-ci.org/fatih/pool)
+
 
 pool is a thread safe connection pool for net.Conn interfaces.
 
