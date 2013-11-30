@@ -121,10 +121,6 @@ func (p *Pool) closePool() chan net.Conn {
 	conns := p.conns
 	p.conns = nil
 	p.factory = nil
-
-	if conns == nil {
-		return nil
-	}
 	return conns
 }
 
