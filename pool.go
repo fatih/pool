@@ -110,6 +110,7 @@ func (p *Pool) Close() {
 	if conns == nil {
 		return
 	}
+	close(conns)
 	for conn := range conns {
 		conn.Close()
 	}
