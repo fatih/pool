@@ -106,7 +106,7 @@ func (p *Pool) put(conn net.Conn) bool {
 // Close closes the pool and all its connections. After Close() the
 // pool is no longer usable.
 func (p *Pool) Close() {
-	conns := p.close()
+	conns := p.closePool()
 	if conns == nil {
 		return
 	}
@@ -115,7 +115,7 @@ func (p *Pool) Close() {
 	}
 }
 
-func (p *Pool) close() chan net.Conn {
+func (p *Pool) closePool() chan net.Conn {
 	p.mu.Lock()
 	defer p.mu.Lock()
 	conns := p.conns
