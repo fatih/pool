@@ -50,69 +50,82 @@ func New(initialCap, maxCap int, factory Factory) (*Pool, error) {
 	return p, nil
 }
 
-func (p *Pool) getConns() chan net.Conns {
-	p.mu.Lock()
-	conns := p.conns
-	p.mu.Unlock()
-	return conns
-}
-
 // Get returns a new connection from the pool. After using the connection it
 // should be put back via the Put() method. If there is no new connection
 // available in the pool, a new connection will be created via the Factory()
 // method.
 func (p *Pool) Get() (net.Conn, error) {
-	conns := p.getConns()
-	if conns == nil  {
-		return nil, errors.New("pool is destroyed")
+	conn, err := p.get()
+	if err != nil {
+		return nil, err
+	}
+	if conn != nil {
+		return conn, nil
+	}
+	return p.factory()
+}
+
+func (p *Pool) get() (net.Conn, error) (net.Conn, error) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	if p.conns == nil  {
+		return nil, errors.New("pool is closed")
 	}
 
 	select {
-	case conn := <-conns:
+	case conn := <-p.conns:
 		return conn, nil
 	default:
-		return p.factory()
 	}
+	return nil, nil
 }
 
 // Put puts an existing connection into the pool. If the pool is full or closed, conn is
 // simply closed.
 func (p *Pool) Put(conn net.Conn) {
-	conns := p.getConns()
-	if conns == nil  {
+	if !p.put(conn) {
 		conn.Close()
-		return
+	}
+}
+
+func (p *Pool) put(conn net.Conn) bool {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	if p.conns == nil  {
+		return false
 	}
 
 	select {
-	case conns <- conn:
-		// No-op
+	case p.conns <- conn:
+		return true
 	default:
-		conn.Close()
 	}
+	return false
 }
 
 // Close closes the pool and all its connections. After Close() the
 // pool is no longer usable.
 func (p *Pool) Close() {
-	p.mu.Lock()
-	conns := p.conns
-	p.conns = nil
-	p.factory = nil
-	if conns == nil {
-		p.mu.Unlock()
-		return
-	}
-	close(conns)
-	p.mu.Unlock()
-
+	conns := p.close()
 	if conns == nil {
 		return
 	}
-
 	for conn := range conns {
 		conn.Close()
 	}
+}
+
+func (p *Pool) close() chan net.Conn {
+	p.mu.Lock()
+	defer p.mu.Lock()
+	conns := p.conns
+	p.conns = nil
+	p.factory = nil
+
+	if conns == nil {
+		return nil
+	}
+	return conns
 }
 
 // MaximumCapacity returns the maximum capacity of the pool
