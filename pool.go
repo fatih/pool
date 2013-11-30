@@ -99,13 +99,17 @@ func (p *Pool) Close() {
 	conns := p.conns
 	p.conns = nil
 	p.factory = nil
+	if conns == nil {
+		p.mu.Unlock()
+		return
+	}
+	close(conns)
 	p.mu.Unlock()
 
 	if conns == nil {
 		return
 	}
 
-	close(conns)
 	for conn := range conns {
 		conn.Close()
 	}
