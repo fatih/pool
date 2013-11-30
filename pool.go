@@ -14,14 +14,12 @@ type Factory func() (net.Conn, error)
 // Pool allows you to use a pool of net.Conn connections.
 type Pool struct {
 	// storage for our net.Conn connections
-	mu sync.Mutex
+	mu    sync.Mutex
 	conns chan net.Conn
 
 	// net.Conn generator
 	factory Factory
-
 }
-
 
 // New returns a new pool with an initial capacity and maximum capacity.
 // Factory is used when initial capacity is greater then zero to fill the
@@ -63,7 +61,7 @@ func (p *Pool) getConns() chan net.Conn {
 // method.
 func (p *Pool) Get() (net.Conn, error) {
 	conns := p.getConns()
-	if conns == nil  {
+	if conns == nil {
 		return nil, errors.New("pool is closed")
 	}
 
@@ -74,8 +72,8 @@ func (p *Pool) Get() (net.Conn, error) {
 		}
 		return conn, nil
 	default:
+		return p.factory()
 	}
-	return p.factory()
 }
 
 // Put puts an existing connection into the pool. If the pool is full or closed, conn is
@@ -92,7 +90,7 @@ func (p *Pool) Put(conn net.Conn) {
 func (p *Pool) put(conn net.Conn) bool {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	if p.conns == nil  {
+	if p.conns == nil {
 		return false
 	}
 
@@ -100,8 +98,8 @@ func (p *Pool) put(conn net.Conn) bool {
 	case p.conns <- conn:
 		return true
 	default:
+		return false
 	}
-	return false
 }
 
 // Close closes the pool and all its connections. After Close() the
@@ -129,5 +127,5 @@ func (p *Pool) closePool() chan net.Conn {
 // MaximumCapacity returns the maximum capacity of the pool
 func (p *Pool) MaximumCapacity() int { return cap(p.getConns()) }
 
-// UsedCapacity returns the used capacity of the pool.
-func (p *Pool) UsedCapacity() int { return len(p.getConns()) }
+// CurrentCapacity returns the current capacity of the pool.
+func (p *Pool) CurrentCapacity() int { return len(p.getConns()) }

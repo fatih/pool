@@ -42,9 +42,9 @@ func TestPool_Get(t *testing.T) {
 		t.Errorf("Get error: %s", err)
 	}
 
-	if testPool.UsedCapacity() != (InitialCap - 1) {
+	if testPool.CurrentCapacity() != (InitialCap - 1) {
 		t.Errorf("Get error. Expecting %d, got %d",
-			(InitialCap - 1), testPool.UsedCapacity())
+			(InitialCap - 1), testPool.CurrentCapacity())
 	}
 
 	var wg sync.WaitGroup
@@ -61,9 +61,9 @@ func TestPool_Get(t *testing.T) {
 
 	wg.Wait()
 
-	if testPool.UsedCapacity() != 0 {
+	if testPool.CurrentCapacity() != 0 {
 		t.Errorf("Get error. Expecting %d, got %d",
-			(InitialCap - 1), testPool.UsedCapacity())
+			(InitialCap - 1), testPool.CurrentCapacity())
 	}
 
 	_, err = testPool.Get()
@@ -80,9 +80,9 @@ func TestPool_Put(t *testing.T) {
 
 	testPool.Put(conn)
 
-	if testPool.UsedCapacity() != 1 {
+	if testPool.CurrentCapacity() != 1 {
 		t.Errorf("Put error. Expecting %d, got %d",
-			1, testPool.UsedCapacity())
+			1, testPool.CurrentCapacity())
 	}
 }
 
@@ -91,16 +91,16 @@ func TestPool_MaximumCapacity(t *testing.T) {
 	p, _ := newPool()
 	if p.MaximumCapacity() != MaximumCap {
 		t.Errorf("MaximumCapacity error. Expecting %d, got %d",
-			MaximumCap, testPool.UsedCapacity())
+			MaximumCap, testPool.CurrentCapacity())
 	}
 }
 
 func TestPool_UsedCapacity(t *testing.T) {
 	// Create new pool to test it
 	p, _ := newPool()
-	if p.UsedCapacity() != InitialCap {
+	if p.CurrentCapacity() != InitialCap {
 		t.Errorf("InitialCap error. Expecting %d, got %d",
-			InitialCap, p.UsedCapacity())
+			InitialCap, p.CurrentCapacity())
 	}
 }
 
@@ -114,7 +114,7 @@ func TestPool_Close(t *testing.T) {
 
 	testPool.Put(conn)
 
-	if testPool.UsedCapacity() != 0 {
+	if testPool.CurrentCapacity() != 0 {
 		t.Errorf("Close error used capacity. Expecting 0, got %d", testPool.MaximumCapacity())
 	}
 
