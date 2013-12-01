@@ -76,52 +76,47 @@ func (p *Pool) Get() (net.Conn, error) {
 	}
 }
 
-// Put puts an existing connection into the pool. If the pool is full or closed, conn is
-// simply closed.
-func (p *Pool) Put(conn net.Conn) {
+// Put puts an existing connection into the pool. If the pool is full or
+// closed, conn is simply closed. A nil conn will be rejected. Putting into a
+// destroyed or full pool will be counted as an error.
+func (p *Pool) Put(conn net.Conn) error {
 	if conn == nil {
-		return
+		return errors.New("connection is nil. rejecting")
 	}
-	if !p.put(conn) {
-		conn.Close()
-	}
-}
 
-func (p *Pool) put(conn net.Conn) bool {
 	p.mu.Lock()
 	defer p.mu.Unlock()
+
 	if p.conns == nil {
-		return false
+		return errors.New("pool is closed")
 	}
 
 	select {
 	case p.conns <- conn:
-		return true
+		return nil
 	default:
-		return false
+		conn.Close()
+		return errors.New("pool is full")
 	}
 }
 
 // Close closes the pool and all its connections. After Close() the
 // pool is no longer usable.
 func (p *Pool) Close() {
-	conns := p.closePool()
+	p.mu.Lock()
+	conns := p.conns
+	p.conns = nil
+	p.factory = nil
+	p.mu.Unlock()
+
 	if conns == nil {
 		return
 	}
+
 	close(conns)
 	for conn := range conns {
 		conn.Close()
 	}
-}
-
-func (p *Pool) closePool() chan net.Conn {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	conns := p.conns
-	p.conns = nil
-	p.factory = nil
-	return conns
 }
 
 // MaximumCapacity returns the maximum capacity of the pool
