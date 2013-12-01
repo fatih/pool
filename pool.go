@@ -88,6 +88,7 @@ func (p *Pool) Put(conn net.Conn) error {
 	defer p.mu.Unlock()
 
 	if p.conns == nil {
+		conn.Close()
 		return errors.New("pool is closed")
 	}
 
