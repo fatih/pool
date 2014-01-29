@@ -15,7 +15,7 @@ go get github.com/fatih/pool
 ```go
 
 // create a factory() to be used with pool
-factory    = func() (net.Conn, error) { return net.Dial("tcp", "127.0.0.1:4000") }
+factory    := func() (net.Conn, error) { return net.Dial("tcp", "127.0.0.1:4000") }
 
 // create a new pool with an initial capacity of 5 and maximum capacity of
 // 30. The factory will create 5 initial connections and put it into the pool
