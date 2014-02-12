@@ -2,7 +2,7 @@
 
 
 Pool is a thread safe connection pool for net.Conn interface. It can be used
-to manage and re usage connections.
+to manage and reuse connections.
 
 ## Install
 
