@@ -22,7 +22,7 @@ type Pool struct {
 }
 
 // New returns a new pool with an initial capacity and maximum capacity.
-// Factory is used when initial capacity is greater then zero to fill the
+// Factory is used when initial capacity is greater than zero to fill the
 // pool.
 func New(initialCap, maxCap int, factory Factory) (*Pool, error) {
 	if initialCap <= 0 || maxCap <= 0 || initialCap > maxCap {
