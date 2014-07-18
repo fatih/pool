@@ -25,11 +25,12 @@ and use `pool` as the package name inside the code.
 
 ```go
 
-// create a factory() to be used with pool
+// create a factory() to be used with channel based pool
 factory    := func() (net.Conn, error) { return net.Dial("tcp", "127.0.0.1:4000") }
 
-// create a new pool with an initial capacity of 5 and maximum capacity of
-// 30. The factory will create 5 initial connections and put it into the pool
+// create a new channel based pool with an initial capacity of 5 and maximum
+// capacity of 30. The factory will create 5 initial connections and put it
+// into the pool.
 p, err := pool.NewChannelPool(5, 30, factory)
 
 // now you can get a connection from the pool, if there is no connection
