@@ -1,14 +1,25 @@
 # Pool [![GoDoc](https://godoc.org/github.com/fatih/pool?status.svg)](http://godoc.org/github.com/fatih/pool) [![Build Status](https://travis-ci.org/fatih/pool.svg)](https://travis-ci.org/fatih/pool)
 
 
-Pool is a thread safe connection pool for net.Conn interface. It can be used
-to manage and reuse connections.
+Pool is a thread safe connection pool for net.Conn interface. It can be used to
+manage and reuse connections.
 
-## Install
+
+## Install and Usage
+
+Install the package with:
 
 ```bash
-go get github.com/fatih/pool
+go get gopkg.in/fatih/pool.v1
 ```
+
+Import it with:
+
+```go
+import "gopkg.in/fatih/pool.v1"
+```
+
+and use `pool` as the package name inside the code.
 
 ## Example
 
@@ -19,7 +30,7 @@ factory    := func() (net.Conn, error) { return net.Dial("tcp", "127.0.0.1:4000"
 
 // create a new pool with an initial capacity of 5 and maximum capacity of
 // 30. The factory will create 5 initial connections and put it into the pool
-p, err := pool.New(5, 30, factory)
+p, err := pool.NewChannelPool(5, 30, factory)
 
 // now you can get a connection from the pool, if there is no connection
 // available it will create a new one via the factory function.
