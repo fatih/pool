@@ -1,4 +1,3 @@
-// Package pool implements a pool of net.Conn interfaces to manage and reuse them.
 package pool
 
 import (
@@ -120,8 +119,8 @@ func (c *ChannelPool) Close() {
 	}
 }
 
-// MaximumCapacity returns the maximum capacity of the pool
-func (c *ChannelPool) MaximumCapacity() int { return cap(c.getConns()) }
+// Cap returns the maximum capacity of the pool
+func (c *ChannelPool) Cap() int { return cap(c.getConns()) }
 
-// CurrentCapacity returns the current capacity of the pool.
-func (c *ChannelPool) CurrentCapacity() int { return len(c.getConns()) }
+// Len returns the current capacity of the pool.
+func (c *ChannelPool) Len() int { return len(c.getConns()) }

@@ -1,4 +1,4 @@
-# Pool [![GoDoc](https://godoc.org/github.com/fatih/pool?status.svg)](http://godoc.org/github.com/fatih/pool) [![Build Status](https://travis-ci.org/fatih/pool.svg)](https://travis-ci.org/fatih/pool)
+# Pool [![GoDoc](https://godoc.org/gopkg.in/fatih/pool.v1?status.svg)](https://godoc.org/gopkg.in/fatih/pool.v1) [![Build Status](https://travis-ci.org/fatih/pool.svg)](https://travis-ci.org/fatih/pool)
 
 
 Pool is a thread safe connection pool for net.Conn interface. It can be used to
@@ -43,10 +43,10 @@ p.Put(conn)
 p.Close()
 
 // currently available connections in the pool
-current := p.CurrentCapacity()
+current := p.Len()
 
 // maximum capacity of your pool
-max := p.MaximumCapacity()
+max := p.Cap()
 ```
 
 

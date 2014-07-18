@@ -39,9 +39,9 @@ func TestPool_Get(t *testing.T) {
 	}
 
 	// after one get, current capacity should be lowered by one.
-	if p.CurrentCapacity() != (InitialCap - 1) {
+	if p.Len() != (InitialCap - 1) {
 		t.Errorf("Get error. Expecting %d, got %d",
-			(InitialCap - 1), p.CurrentCapacity())
+			(InitialCap - 1), p.Len())
 	}
 
 	// get them all
@@ -58,9 +58,9 @@ func TestPool_Get(t *testing.T) {
 	}
 	wg.Wait()
 
-	if p.CurrentCapacity() != 0 {
+	if p.Len() != 0 {
 		t.Errorf("Get error. Expecting %d, got %d",
-			(InitialCap - 1), p.CurrentCapacity())
+			(InitialCap - 1), p.Len())
 	}
 
 	_, err = p.Get()
@@ -78,9 +78,9 @@ func TestPool_Put(t *testing.T) {
 		p.Put(conn)
 	}
 
-	if p.MaximumCapacity() != MaximumCap {
+	if p.Cap() != MaximumCap {
 		t.Errorf("Put error. Expecting %d, got %d",
-			1, p.CurrentCapacity())
+			1, p.Len())
 	}
 
 	err := p.Put(nil)
@@ -100,9 +100,9 @@ func TestPool_MaximumCapacity(t *testing.T) {
 	p, _ := newChannelPool()
 	defer p.Close()
 
-	if p.MaximumCapacity() != MaximumCap {
-		t.Errorf("MaximumCapacity error. Expecting %d, got %d",
-			MaximumCap, p.CurrentCapacity())
+	if p.Cap() != MaximumCap {
+		t.Errorf("Cap error. Expecting %d, got %d",
+			MaximumCap, p.Len())
 	}
 }
 
@@ -110,9 +110,9 @@ func TestPool_UsedCapacity(t *testing.T) {
 	p, _ := newChannelPool()
 	defer p.Close()
 
-	if p.CurrentCapacity() != InitialCap {
+	if p.Len() != InitialCap {
 		t.Errorf("InitialCap error. Expecting %d, got %d",
-			InitialCap, p.CurrentCapacity())
+			InitialCap, p.Len())
 	}
 }
 
@@ -143,12 +143,12 @@ func TestPool_Close(t *testing.T) {
 		t.Errorf("Close error, put conn should return an error")
 	}
 
-	if p.CurrentCapacity() != 0 {
-		t.Errorf("Close error used capacity. Expecting 0, got %d", p.CurrentCapacity())
+	if p.Len() != 0 {
+		t.Errorf("Close error used capacity. Expecting 0, got %d", p.Len())
 	}
 
-	if p.MaximumCapacity() != 0 {
-		t.Errorf("Close error max capacity. Expecting 0, got %d", p.MaximumCapacity())
+	if p.Cap() != 0 {
+		t.Errorf("Close error max capacity. Expecting 0, got %d", p.Cap())
 	}
 }
 

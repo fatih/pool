@@ -15,12 +15,13 @@ var (
 	ErrPoolFull = errors.New("pool is full")
 )
 
-// Pool interface describes a pool implementation.
+// Pool interface describes a pool implementation. A pool should have maximum
+// capacity. An ideal pool is threadsafe and easy to use.
 type Pool interface {
-	// Get returns a new connection from the pool. After using the connection it
-	// should be put back via the Put() method. If there is no new connection
-	// available in the pool, a new connection will be created via the Factory()
-	// method.
+	// Get returns a new connection from the pool. After using the connection
+	// it should be put back via the Put() method. If there is no new
+	// connection available in the pool it's up to the implementer how to act.
+	// It can create a new connection or return an error.
 	Get() (net.Conn, error)
 
 	// Put puts an existing connection into the pool. If the pool is full or
@@ -32,9 +33,9 @@ type Pool interface {
 	// pool is no longer usable.
 	Close()
 
-	// MaximumCapacity returns the maximum capacity of the pool
-	MaximumCapacity() int
+	// Cap returns the maximum capacity of the pool
+	Cap() int
 
-	// CurrentCapacity returns the current capacity of the pool.
-	CurrentCapacity() int
+	// Len returns the current capacity of the pool.
+	Len() int
 }
