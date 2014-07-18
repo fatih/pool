@@ -7,12 +7,11 @@ import (
 )
 
 var (
-	// ErrPoolClosed is the error resulting if the pool is closed via
-	// pool.Close().
-	ErrPoolClosed = errors.New("pool is closed")
+	// ErrClosed is the error resulting if the pool is closed via pool.Close().
+	ErrClosed = errors.New("pool is closed")
 
-	// ErrPoolFull is the error resulting if the pool is full.
-	ErrPoolFull = errors.New("pool is full")
+	// ErrFull is the error resulting if the pool is full.
+	ErrFull = errors.New("pool is full")
 )
 
 // Pool interface describes a pool implementation. A pool should have maximum

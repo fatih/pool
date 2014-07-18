@@ -61,13 +61,13 @@ func (c *ChannelPool) getConns() chan net.Conn {
 func (c *ChannelPool) Get() (net.Conn, error) {
 	conns := c.getConns()
 	if conns == nil {
-		return nil, ErrPoolClosed
+		return nil, ErrClosed
 	}
 
 	select {
 	case conn := <-conns:
 		if conn == nil {
-			return nil, ErrPoolClosed
+			return nil, ErrClosed
 		}
 		return conn, nil
 	default:
@@ -88,7 +88,7 @@ func (c *ChannelPool) Put(conn net.Conn) error {
 
 	if c.conns == nil {
 		conn.Close()
-		return ErrPoolClosed
+		return ErrClosed
 	}
 
 	select {
@@ -96,7 +96,7 @@ func (c *ChannelPool) Put(conn net.Conn) error {
 		return nil
 	default:
 		conn.Close()
-		return ErrPoolFull
+		return ErrFull
 	}
 }
 
