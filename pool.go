@@ -8,6 +8,15 @@ import (
 	"sync"
 )
 
+var (
+	// ErrPoolClosed is the error resulting if the pool is closed via
+	// pool.Close().
+	ErrPoolClosed = errors.New("pool is closed")
+
+	// ErrPoolFull is the error resulting if the pool is full.
+	ErrPoolFull = errors.New("pool is full")
+)
+
 // Factory is a function to create new connections.
 type Factory func() (net.Conn, error)
 
@@ -62,13 +71,13 @@ func (p *Pool) getConns() chan net.Conn {
 func (p *Pool) Get() (net.Conn, error) {
 	conns := p.getConns()
 	if conns == nil {
-		return nil, errors.New("pool is closed")
+		return nil, ErrPoolClosed
 	}
 
 	select {
 	case conn := <-conns:
 		if conn == nil {
-			return nil, errors.New("pool is closed")
+			return nil, ErrPoolClosed
 		}
 		return conn, nil
 	default:
@@ -89,7 +98,7 @@ func (p *Pool) Put(conn net.Conn) error {
 
 	if p.conns == nil {
 		conn.Close()
-		return errors.New("pool is closed")
+		return ErrPoolClosed
 	}
 
 	select {
@@ -97,7 +106,7 @@ func (p *Pool) Put(conn net.Conn) error {
 		return nil
 	default:
 		conn.Close()
-		return errors.New("pool is full")
+		return ErrPoolFull
 	}
 }
 
