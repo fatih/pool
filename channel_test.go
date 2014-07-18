@@ -23,14 +23,14 @@ func init() {
 }
 
 func TestNew(t *testing.T) {
-	_, err := newPool()
+	_, err := newChannelPool()
 	if err != nil {
 		t.Errorf("New error: %s", err)
 	}
 }
 
 func TestPool_Get(t *testing.T) {
-	p, _ := newPool()
+	p, _ := newChannelPool()
 	defer p.Close()
 
 	_, err := p.Get()
@@ -70,11 +70,11 @@ func TestPool_Get(t *testing.T) {
 }
 
 func TestPool_Put(t *testing.T) {
-	p, _ := newPool()
+	p, _ := newChannelPool()
 	defer p.Close()
 
 	for i := 0; i < MaximumCap; i++ {
-		conn, _ := p.factory()
+		conn, _ := factory()
 		p.Put(conn)
 	}
 
@@ -88,7 +88,7 @@ func TestPool_Put(t *testing.T) {
 		t.Errorf("Put error. A nil conn should be rejected")
 	}
 
-	conn, _ := p.factory()
+	conn, _ := factory()
 	err = p.Put(conn) // try to put into a full pool
 	if err == nil {
 		t.Errorf("Put error. Put into a full pool should return an error")
@@ -97,7 +97,7 @@ func TestPool_Put(t *testing.T) {
 }
 
 func TestPool_MaximumCapacity(t *testing.T) {
-	p, _ := newPool()
+	p, _ := newChannelPool()
 	defer p.Close()
 
 	if p.MaximumCapacity() != MaximumCap {
@@ -107,7 +107,7 @@ func TestPool_MaximumCapacity(t *testing.T) {
 }
 
 func TestPool_UsedCapacity(t *testing.T) {
-	p, _ := newPool()
+	p, _ := newChannelPool()
 	defer p.Close()
 
 	if p.CurrentCapacity() != InitialCap {
@@ -117,17 +117,19 @@ func TestPool_UsedCapacity(t *testing.T) {
 }
 
 func TestPool_Close(t *testing.T) {
-	p, _ := newPool()
-	conn, _ := p.factory() // to be used with put
+	p, _ := newChannelPool()
+	conn, _ := factory() // to be used with put
 
 	// now close it and test all cases we are expecting.
 	p.Close()
 
-	if p.conns != nil {
+	c := p.(*ChannelPool)
+
+	if c.conns != nil {
 		t.Errorf("Close error, conns channel should be nil")
 	}
 
-	if p.factory != nil {
+	if c.factory != nil {
 		t.Errorf("Close error, factory should be nil")
 	}
 
@@ -151,7 +153,7 @@ func TestPool_Close(t *testing.T) {
 }
 
 func TestPoolConcurrent(t *testing.T) {
-	p, _ := newPool()
+	p, _ := newChannelPool()
 	pipe := make(chan net.Conn, 0)
 
 	go func() {
@@ -173,10 +175,10 @@ func TestPoolConcurrent(t *testing.T) {
 }
 
 func TestPoolConcurrent2(t *testing.T) {
-	p, _ := newPool()
+	p, _ := newChannelPool()
 
 	for i := 0; i < MaximumCap; i++ {
-		conn, _ := p.factory()
+		conn, _ := factory()
 		p.Put(conn)
 	}
 
@@ -189,7 +191,9 @@ func TestPoolConcurrent2(t *testing.T) {
 	p.Close()
 }
 
-func newPool() (*Pool, error) { return New(InitialCap, MaximumCap, factory) }
+func newChannelPool() (Pool, error) {
+	return NewChannelPool(InitialCap, MaximumCap, factory)
+}
 
 func simpleTCPServer() {
 	l, err := net.Listen(network, address)
