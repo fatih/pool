@@ -23,7 +23,9 @@ type Factory func() (net.Conn, error)
 // NewChannelPool returns a new pool based on buffered channels with an initial
 // capacity and maximum capacity. Factory is used when initial capacity is
 // greater than zero to fill the pool. A zero initialCap doesn't fill the Pool
-// until a new Get() is called.
+// until a new Get() is called. During a Get(), If there is no new connection
+// available in the pool, a new connection will be created via the Factory()
+// method.
 func NewChannelPool(initialCap, maxCap int, factory Factory) (Pool, error) {
 	if initialCap < 0 || maxCap <= 0 || initialCap > maxCap {
 		return nil, errors.New("invalid capacity settings")
@@ -64,14 +66,16 @@ func (c *channelPool) Get() (conn net.Conn, err error) {
 		return nil, ErrClosed
 	}
 
+	// wrap our connection with out custom net.Conn implementation that puts
+	// the connection back to the pool if it's closed.
 	defer func() {
 		if err == nil {
-			conn = c.newConn(conn)
+			conn = c.wrapConn(conn)
 		}
 	}()
 
 	select {
-	case conn := <-conns:
+	case conn = <-conns:
 		if conn == nil {
 			return nil, ErrClosed
 		}
