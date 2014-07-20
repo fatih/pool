@@ -7,7 +7,7 @@ import (
 	"sync"
 )
 
-// Pool allows you to use a pool of net.Conn connections.
+// ChannelPool implements the Pool interface based on buffered channels.
 type ChannelPool struct {
 	// storage for our net.Conn connections
 	mu    sync.Mutex
