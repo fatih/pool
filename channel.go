@@ -22,9 +22,10 @@ type Factory func() (net.Conn, error)
 
 // NewChannelPool returns a new pool based on buffered channels with an initial
 // capacity and maximum capacity. Factory is used when initial capacity is
-// greater than zero to fill the pool.
+// greater than zero to fill the pool. A zero initialCap doesn't fill the Pool
+// until a new Get() is called.
 func NewChannelPool(initialCap, maxCap int, factory Factory) (Pool, error) {
-	if initialCap <= 0 || maxCap <= 0 || initialCap > maxCap {
+	if initialCap < 0 || maxCap <= 0 || initialCap > maxCap {
 		return nil, errors.New("invalid capacity settings")
 	}
 
@@ -54,31 +55,37 @@ func (c *ChannelPool) getConns() chan net.Conn {
 	return conns
 }
 
-// Get returns a new connection from the pool. After using the connection it
-// should be put back via the Put() method. If there is no new connection
-// available in the pool, a new connection will be created via the Factory()
-// method.
-func (c *ChannelPool) Get() (net.Conn, error) {
+// Get returns a new connection from the pool. Closing the connections puts it
+// back to the Pool. Closing it when when the pool is destroyed or full will be
+// counted as an error. If there is no new connection available in the pool, a
+// new connection will be created via the Factory() method.
+func (c *ChannelPool) Get() (conn net.Conn, err error) {
 	conns := c.getConns()
 	if conns == nil {
 		return nil, ErrClosed
 	}
+
+	defer func() {
+		if err == nil {
+			conn = c.newConn(conn)
+		}
+	}()
 
 	select {
 	case conn := <-conns:
 		if conn == nil {
 			return nil, ErrClosed
 		}
+
 		return conn, nil
 	default:
 		return c.factory()
 	}
 }
 
-// Put puts an existing connection into the pool. If the pool is full or
-// closed, conn is simply closed. A nil conn will be rejected. Putting into a
-// destroyed or full pool will be counted as an error.
-func (c *ChannelPool) Put(conn net.Conn) error {
+// put puts the connection back to the pool. If the pool is full or closed,
+// conn is simply closed. A nil conn will be rejected.
+func (c *ChannelPool) put(conn net.Conn) error {
 	if conn == nil {
 		return errors.New("connection is nil. rejecting")
 	}
