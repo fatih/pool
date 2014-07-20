@@ -55,6 +55,9 @@ func (c *ChannelPool) getConns() chan net.Conn {
 	return conns
 }
 
+// Get implements the Pool interfaces Get() method. If there is no new
+// connection available in the pool, a new connection will be created via the
+// Factory() method.
 func (c *ChannelPool) Get() (conn net.Conn, err error) {
 	conns := c.getConns()
 	if conns == nil {
@@ -119,7 +122,5 @@ func (c *ChannelPool) Close() {
 		conn.Close()
 	}
 }
-
-func (c *ChannelPool) Cap() int { return cap(c.getConns()) }
 
 func (c *ChannelPool) Len() int { return len(c.getConns()) }

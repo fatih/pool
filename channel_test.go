@@ -105,11 +105,6 @@ func TestPool_Put(t *testing.T) {
 		conn.Close()
 	}
 
-	if p.Cap() != MaximumCap {
-		t.Errorf("Put error cap. Expecting %d, got %d",
-			1, p.Len())
-	}
-
 	if p.Len() != MaximumCap {
 		t.Errorf("Put error len. Expecting %d, got %d",
 			1, p.Len())
@@ -123,16 +118,6 @@ func TestPool_Put(t *testing.T) {
 		t.Errorf("Put error. Put into a full pool should return an error")
 	}
 
-}
-
-func TestPool_MaximumCapacity(t *testing.T) {
-	p, _ := newChannelPool()
-	defer p.Close()
-
-	if p.Cap() != MaximumCap {
-		t.Errorf("Cap error. Expecting %d, got %d",
-			MaximumCap, p.Len())
-	}
 }
 
 func TestPool_UsedCapacity(t *testing.T) {
@@ -168,10 +153,6 @@ func TestPool_Close(t *testing.T) {
 
 	if p.Len() != 0 {
 		t.Errorf("Close error used capacity. Expecting 0, got %d", p.Len())
-	}
-
-	if p.Cap() != 0 {
-		t.Errorf("Close error max capacity. Expecting 0, got %d", p.Cap())
 	}
 }
 
