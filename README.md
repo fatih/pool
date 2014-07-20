@@ -37,10 +37,11 @@ p, err := pool.NewChannelPool(5, 30, factory)
 // available it will create a new one via the factory function.
 conn, err := p.Get()
 
-// do something with conn and put it back to the pool
-p.Put(conn)
+// do something with conn and put it back to the pool, yes just close the
+// connection :)
+conn.Close()
 
-// close pool any time you want
+// close pool any time you want, this closes all the connections inside a pool
 p.Close()
 
 // currently available connections in the pool

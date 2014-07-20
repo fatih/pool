@@ -55,10 +55,6 @@ func (c *ChannelPool) getConns() chan net.Conn {
 	return conns
 }
 
-// Get returns a new connection from the pool. Closing the connections puts it
-// back to the Pool. Closing it when when the pool is destroyed or full will be
-// counted as an error. If there is no new connection available in the pool, a
-// new connection will be created via the Factory() method.
 func (c *ChannelPool) Get() (conn net.Conn, err error) {
 	conns := c.getConns()
 	if conns == nil {
@@ -107,8 +103,6 @@ func (c *ChannelPool) put(conn net.Conn) error {
 	}
 }
 
-// Close closes the pool and all its connections. After Close() the
-// pool is no longer usable.
 func (c *ChannelPool) Close() {
 	c.mu.Lock()
 	conns := c.conns
@@ -126,8 +120,6 @@ func (c *ChannelPool) Close() {
 	}
 }
 
-// Cap returns the maximum capacity of the pool
 func (c *ChannelPool) Cap() int { return cap(c.getConns()) }
 
-// Len returns the current capacity of the pool.
 func (c *ChannelPool) Len() int { return len(c.getConns()) }
