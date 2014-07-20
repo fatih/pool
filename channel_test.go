@@ -40,7 +40,7 @@ func TestPool_Get_Impl(t *testing.T) {
 		t.Errorf("Get error: %s", err)
 	}
 
-	_, ok := conn.(poolConn)
+	_, ok := conn.(PoolConn)
 	if !ok {
 		t.Errorf("Conn is not of type poolConn")
 	}

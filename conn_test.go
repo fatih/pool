@@ -6,5 +6,5 @@ import (
 )
 
 func TestConn_Impl(t *testing.T) {
-	var _ net.Conn = new(poolConn)
+	var _ net.Conn = new(PoolConn)
 }

@@ -1,22 +1,38 @@
 package pool
 
-import "net"
+import (
+	"errors"
+	"net"
+)
 
-// poolConn is a wrapper around net.Conn to modify the the behavior of
-// net.Conn's Close() method
-type poolConn struct {
+// PoolConn is a wrapper around net.Conn to modify the the behavior of
+// net.Conn's Close() method.
+type PoolConn struct {
 	net.Conn
-	c *ChannelPool
+	c      *ChannelPool
+	closed bool
 }
 
-// Close() puths the given connects back to the pool instead of closing it
-func (p poolConn) Close() error {
+// Close() puts the given connects back to the pool instead of closing it.
+func (p PoolConn) Close() error {
+	if p.closed {
+		return errors.New("underlying connection is closed")
+	}
+
 	return p.c.put(p.Conn)
 }
 
-// newConn wraps a standard net.Conn to a poolConn net.Conn.
+// CloseConn() closes the underlying connection. Usually you want to use
+// Close() to put it back to the Pool. The connection cannot be put back to the
+// pool after closing the underlying connection.
+func (p PoolConn) CloseConn() error {
+	p.closed = true
+	return p.Close()
+}
+
+// newConn wraps a standard net.Conn to a PoolConn net.Conn.
 func (c *ChannelPool) newConn(conn net.Conn) net.Conn {
-	p := poolConn{c: c}
+	p := PoolConn{c: c}
 	p.Conn = conn
 	return p
 }
