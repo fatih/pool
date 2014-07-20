@@ -7,8 +7,8 @@ import (
 	"sync"
 )
 
-// ChannelPool implements the Pool interface based on buffered channels.
-type ChannelPool struct {
+// channelPool implements the Pool interface based on buffered channels.
+type channelPool struct {
 	// storage for our net.Conn connections
 	mu    sync.Mutex
 	conns chan net.Conn
@@ -29,7 +29,7 @@ func NewChannelPool(initialCap, maxCap int, factory Factory) (Pool, error) {
 		return nil, errors.New("invalid capacity settings")
 	}
 
-	c := &ChannelPool{
+	c := &channelPool{
 		conns:   make(chan net.Conn, maxCap),
 		factory: factory,
 	}
@@ -48,7 +48,7 @@ func NewChannelPool(initialCap, maxCap int, factory Factory) (Pool, error) {
 	return c, nil
 }
 
-func (c *ChannelPool) getConns() chan net.Conn {
+func (c *channelPool) getConns() chan net.Conn {
 	c.mu.Lock()
 	conns := c.conns
 	c.mu.Unlock()
@@ -58,7 +58,7 @@ func (c *ChannelPool) getConns() chan net.Conn {
 // Get implements the Pool interfaces Get() method. If there is no new
 // connection available in the pool, a new connection will be created via the
 // Factory() method.
-func (c *ChannelPool) Get() (conn net.Conn, err error) {
+func (c *channelPool) Get() (conn net.Conn, err error) {
 	conns := c.getConns()
 	if conns == nil {
 		return nil, ErrClosed
@@ -84,7 +84,7 @@ func (c *ChannelPool) Get() (conn net.Conn, err error) {
 
 // put puts the connection back to the pool. If the pool is full or closed,
 // conn is simply closed. A nil conn will be rejected.
-func (c *ChannelPool) put(conn net.Conn) error {
+func (c *channelPool) put(conn net.Conn) error {
 	if conn == nil {
 		return errors.New("connection is nil. rejecting")
 	}
@@ -106,7 +106,7 @@ func (c *ChannelPool) put(conn net.Conn) error {
 	}
 }
 
-func (c *ChannelPool) Close() {
+func (c *channelPool) Close() {
 	c.mu.Lock()
 	conns := c.conns
 	c.conns = nil
@@ -123,4 +123,4 @@ func (c *ChannelPool) Close() {
 	}
 }
 
-func (c *ChannelPool) Len() int { return len(c.getConns()) }
+func (c *channelPool) Len() int { return len(c.getConns()) }

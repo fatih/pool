@@ -136,7 +136,7 @@ func TestPool_Close(t *testing.T) {
 	// now close it and test all cases we are expecting.
 	p.Close()
 
-	c := p.(*ChannelPool)
+	c := p.(*channelPool)
 
 	if c.conns != nil {
 		t.Errorf("Close error, conns channel should be nil")

@@ -9,7 +9,7 @@ import (
 // net.Conn's Close() method.
 type poolConn struct {
 	net.Conn
-	c      *ChannelPool
+	c      *channelPool
 	closed bool
 }
 
@@ -31,7 +31,7 @@ func (p poolConn) closeConn() error {
 }
 
 // newConn wraps a standard net.Conn to a poolConn net.Conn.
-func (c *ChannelPool) newConn(conn net.Conn) net.Conn {
+func (c *channelPool) newConn(conn net.Conn) net.Conn {
 	p := poolConn{c: c}
 	p.Conn = conn
 	return p
