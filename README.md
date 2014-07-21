@@ -24,7 +24,6 @@ and use `pool` as the package name inside the code.
 ## Example
 
 ```go
-
 // create a factory() to be used with channel based pool
 factory    := func() (net.Conn, error) { return net.Dial("tcp", "127.0.0.1:4000") }
 
@@ -37,7 +36,9 @@ p, err := pool.NewChannelPool(5, 30, factory)
 // available it will create a new one via the factory function.
 conn, err := p.Get()
 
-// do something with conn and put it back to the pool by closing the connection.
+// do something with conn and put it back to the pool by closing the
+connection (this doesn't close the underlying connection instead it's putting
+it back to the pool).
 conn.Close()
 
 // close pool any time you want, this closes all the connections inside a pool
