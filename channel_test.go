@@ -113,11 +113,10 @@ func TestPool_Put(t *testing.T) {
 	conn, _ := p.Get()
 	p.Close() // close pool
 
-	err = conn.Close() // try to put into a full pool
-	if err == nil {
-		t.Errorf("Put error. Put into a full pool should return an error")
+	conn.Close() // try to put into a full pool
+	if p.Len() != 0 {
+		t.Errorf("Put error. Closed pool shouldn't allow to put connections.")
 	}
-
 }
 
 func TestPool_UsedCapacity(t *testing.T) {

@@ -22,14 +22,6 @@ func (p poolConn) Close() error {
 	return p.c.put(p.Conn)
 }
 
-// closeConn() closes the underlying connection. Usually you want to use
-// Close() to put it back to the Pool. The connection cannot be put back to the
-// pool after closing the underlying connection.
-func (p poolConn) closeConn() error {
-	p.closed = true
-	return p.Close()
-}
-
 // newConn wraps a standard net.Conn to a poolConn net.Conn.
 func (c *channelPool) wrapConn(conn net.Conn) net.Conn {
 	p := poolConn{c: c}

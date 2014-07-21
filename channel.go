@@ -60,7 +60,7 @@ func (c *channelPool) getConns() chan net.Conn {
 // Get implements the Pool interfaces Get() method. If there is no new
 // connection available in the pool, a new connection will be created via the
 // Factory() method.
-func (c *channelPool) Get() (conn net.Conn, err error) {
+func (c *channelPool) Get() (net.Conn, error) {
 	conns := c.getConns()
 	if conns == nil {
 		return nil, ErrClosed
@@ -68,21 +68,21 @@ func (c *channelPool) Get() (conn net.Conn, err error) {
 
 	// wrap our connection with out custom net.Conn implementation that puts
 	// the connection back to the pool if it's closed.
-	defer func() {
-		if err == nil {
-			conn = c.wrapConn(conn)
-		}
-	}()
 
 	select {
-	case conn = <-conns:
+	case conn := <-conns:
 		if conn == nil {
 			return nil, ErrClosed
 		}
 
-		return conn, nil
+		return c.wrapConn(conn), nil
 	default:
-		return c.factory()
+		conn, err := c.factory()
+		if err != nil {
+			return nil, err
+		}
+
+		return c.wrapConn(conn), nil
 	}
 }
 
@@ -97,16 +97,16 @@ func (c *channelPool) put(conn net.Conn) error {
 	defer c.mu.Unlock()
 
 	if c.conns == nil {
-		conn.Close()
-		return ErrClosed
+		// pool is closed, close passed connection
+		return conn.Close()
 	}
 
 	select {
 	case c.conns <- conn:
 		return nil
 	default:
-		conn.Close()
-		return ErrFull
+		// pool is full, close passed connection
+		return conn.Close()
 	}
 }
 
