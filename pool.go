@@ -9,9 +9,6 @@ import (
 var (
 	// ErrClosed is the error resulting if the pool is closed via pool.Close().
 	ErrClosed = errors.New("pool is closed")
-
-	// ErrFull is the error resulting if the pool is full.
-	ErrFull = errors.New("pool is full")
 )
 
 // Pool interface describes a pool implementation. A pool should have maximum
