@@ -1,4 +1,4 @@
-# Pool [![GoDoc](https://godoc.org/gopkg.in/fatih/pool.v1?status.svg)](https://godoc.org/gopkg.in/fatih/pool.v1) [![Build Status](https://travis-ci.org/fatih/pool.svg)](https://travis-ci.org/fatih/pool)
+# Pool [![GoDoc](https://godoc.org/gopkg.in/fatih/pool.v2?status.svg)](https://godoc.org/gopkg.in/fatih/pool.v2) [![Build Status](https://travis-ci.org/fatih/pool.svg)](https://travis-ci.org/fatih/pool)
 
 
 Pool is a thread safe connection pool for net.Conn interface. It can be used to
@@ -10,13 +10,13 @@ manage and reuse connections.
 Install the package with:
 
 ```bash
-go get gopkg.in/fatih/pool.v1
+go get gopkg.in/fatih/pool.v2
 ```
 
 Import it with:
 
 ```go
-import "gopkg.in/fatih/pool.v1"
+import "gopkg.in/fatih/pool.v2"
 ```
 
 and use `pool` as the package name inside the code.
