@@ -21,7 +21,7 @@ func (p PoolConn) Close() error {
 	return p.c.put(p.Conn)
 }
 
-// MarkUnreusable() marks the connection is not reusable.
+// MarkUnusable() marks the connection not usable any more, to let the pool close it instead of returning it to pool.
 func (p *PoolConn) MarkUnusable() {
 	p.unusable = true
 }
