@@ -14,7 +14,7 @@ type PoolConn struct {
 func (p PoolConn) Close() error {
 	if p.unusable {
 		if p.Conn != nil {
-			p.Conn.Close()
+			return p.Conn.Close()
 		}
 		return nil
 	}
