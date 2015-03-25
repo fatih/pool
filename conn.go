@@ -7,12 +7,12 @@ import "net"
 type PoolConn struct {
 	net.Conn
 	c          *channelPool
-	unreusable bool
+	unusable bool
 }
 
 // Close() puts the given connects back to the pool instead of closing it.
 func (p PoolConn) Close() error {
-	if p.unreusable {
+	if p.unusable {
 		if p.Conn != nil {
 			p.Conn.Close()
 		}
@@ -22,8 +22,8 @@ func (p PoolConn) Close() error {
 }
 
 // MarkUnreusable() marks the connection is not reusable.
-func (p *PoolConn) MarkUnreusable() {
-	p.unreusable = true
+func (p *PoolConn) MarkUnusable() {
+	p.unusable = true
 }
 
 // newConn wraps a standard net.Conn to a poolConn net.Conn.

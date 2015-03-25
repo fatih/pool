@@ -119,7 +119,7 @@ func TestPool_Put(t *testing.T) {
 	}
 }
 
-func TestPool_PutUnreusableConn(t *testing.T) {
+func TestPool_PutUnusableConn(t *testing.T) {
 	p, _ := newChannelPool()
 	defer p.Close()
 
@@ -138,7 +138,7 @@ func TestPool_PutUnreusableConn(t *testing.T) {
 	if pc, ok := conn.(*PoolConn); !ok {
 		t.Errorf("impossible")
 	} else {
-		pc.MarkUnreusable()
+		pc.MarkUnusable()
 	}
 	conn.Close()
 	if p.Len() != poolSize-1 {
