@@ -17,7 +17,7 @@ type PoolConn struct {
 // Close() puts the given connects back to the pool instead of closing it.
 func (p *PoolConn) Close() error {
 	p.RLock()
-	defer p.Unlock()
+	defer p.RUnlock()
 
 	if p.unusable {
 		if p.Conn != nil {
