@@ -9,15 +9,15 @@ import (
 // net.Conn's Close() method.
 type PoolConn struct {
 	net.Conn
-	sync.RWMutex
+	mu       sync.RWMutex
 	c        *channelPool
 	unusable bool
 }
 
 // Close() puts the given connects back to the pool instead of closing it.
 func (p *PoolConn) Close() error {
-	p.RLock()
-	defer p.RUnlock()
+	p.mu.RLock()
+	defer p.mu.RUnlock()
 
 	if p.unusable {
 		if p.Conn != nil {
@@ -30,9 +30,9 @@ func (p *PoolConn) Close() error {
 
 // MarkUnusable() marks the connection not usable any more, to let the pool close it instead of returning it to pool.
 func (p *PoolConn) MarkUnusable() {
-	p.Lock()
+	p.mu.Lock()
 	p.unusable = true
-	p.Unlock()
+	p.mu.Unlock()
 }
 
 // newConn wraps a standard net.Conn to a poolConn net.Conn.
