@@ -16,6 +16,7 @@ type PoolConn struct {
 
 func (p *PoolConn) Read(b []byte) (int, error) {
 	n, err := p.Conn.Read(b)
+	// mark as unusable on error.
 	if terr, ok := err.(net.Error); ok && !terr.Timeout() {
 		p.MarkUnusable()
 	}
@@ -24,6 +25,7 @@ func (p *PoolConn) Read(b []byte) (int, error) {
 
 func (p *PoolConn) Write(b []byte) (int, error) {
 	n, err := p.Conn.Write(b)
+	// mark as unusable on error.
 	if terr, ok := err.(net.Error); ok && !terr.Timeout() {
 		p.MarkUnusable()
 	}
