@@ -14,6 +14,22 @@ type PoolConn struct {
 	unusable bool
 }
 
+func (p *PoolConn) Read(b []byte) (int, error) {
+	n, err := p.Conn.Read(b)
+	if terr, ok := err.(net.Error); ok && !terr.Timeout() {
+		p.MarkUnusable()
+	}
+	return n, err
+}
+
+func (p *PoolConn) Write(b []byte) (int, error) {
+	n, err := p.Conn.Write(b)
+	if terr, ok := err.(net.Error); ok && !terr.Timeout() {
+		p.MarkUnusable()
+	}
+	return n, err
+}
+
 // Close() puts the given connects back to the pool instead of closing it.
 func (p *PoolConn) Close() error {
 	p.mu.RLock()
