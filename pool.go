@@ -25,4 +25,7 @@ type Pool interface {
 
 	// Len returns the current number of connections of the pool.
 	Len() int
+
+	// Returns total active connections.
+	LenActives() int
 }

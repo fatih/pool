@@ -20,10 +20,7 @@ func (p *PoolConn) Close() error {
 	defer p.mu.RUnlock()
 
 	if p.unusable {
-		if p.Conn != nil {
-			return p.Conn.Close()
-		}
-		return nil
+		return p.c.tryClose(p.Conn)
 	}
 	return p.c.put(p.Conn)
 }
