@@ -48,7 +48,7 @@ func NewChannelPoolMaxActive(initialCap, maxCap int, maxActive int, factory Fact
 	// create initial connections, if something goes wrong,
 	// just close the pool error out.
 	for i := 0; i < initialCap; i++ {
-		conn, err := c.tryOpen()
+		conn, err := c.tryOpen(false)
 		if err != nil {
 			c.Close()
 			return nil, fmt.Errorf("factory is not able to fill the pool: %s", err)
@@ -63,10 +63,20 @@ func NewChannelPool(initialCap, maxCap int, factory Factory) (Pool, error) {
 	return NewChannelPoolMaxActive(initialCap, maxCap, 0, factory)
 }
 
-func (c *channelPool) tryOpen() (net.Conn, error) {
+func (c *channelPool) tryOpen(isNonBlocking bool) (net.Conn, error) {
 	// this will block if active connections are limited.
 	if c.isLimited {
-		c.actives <- struct{}{}
+		if isNonBlocking {
+			select {
+			case c.actives <- struct{}{}:
+				// connection available
+			default:
+				// would block
+				return nil, ErrConnLimit
+			}
+		} else {
+			c.actives <- struct{}{}
+		}
 	}
 	conn, err := c.factory()
 	if err != nil {
@@ -103,7 +113,7 @@ func (c *channelPool) getActives() chan struct{} {
 // Get implements the Pool interfaces Get() method. If there is no new
 // connection available in the pool, a new connection will be created via the
 // Factory() method.
-func (c *channelPool) Get() (net.Conn, error) {
+func (c *channelPool) get(isNonBlocking bool) (net.Conn, error) {
 	conns := c.getConns()
 	if conns == nil {
 		return nil, ErrClosed
@@ -119,13 +129,21 @@ func (c *channelPool) Get() (net.Conn, error) {
 
 		return c.wrapConn(conn), nil
 	default:
-		conn, err := c.tryOpen()
+		conn, err := c.tryOpen(isNonBlocking)
 		if err != nil {
 			return nil, err
 		}
 
 		return c.wrapConn(conn), nil
 	}
+}
+
+func (c *channelPool) Get() (net.Conn, error) {
+	return c.get(false)
+}
+
+func (c *channelPool) TryGet() (net.Conn, error) {
+	return c.get(true)
 }
 
 // put puts the connection back to the pool. If the pool is full or closed,
