@@ -142,7 +142,7 @@ func TestPool_PutUnusableConn(t *testing.T) {
 	}
 	conn.Close()
 	if p.Len() != poolSize-1 {
-		t.Errorf("Pool size is expected to be initial_size - 1", p.Len(), poolSize-1)
+		t.Errorf("Pool size is expected to be initial_size - 1. Expecting %d, got %d", poolSize-1, p.Len())
 	}
 }
 
@@ -247,6 +247,33 @@ func TestPoolConcurrent2(t *testing.T) {
 	}
 
 	wg.Wait()
+}
+
+func TestPoolSupply(t *testing.T) {
+	p, _ := NewChannelPool(0, 5, factory)
+	err := p.Supply(1)
+	if err != nil {
+		t.Error(err)
+	}
+	if p.Len() != 1 {
+		t.Errorf("Pool size is expected to be 1, got %d", p.Len())
+	}
+
+	err = p.Supply(6)
+	if err != nil {
+		t.Error(err)
+	}
+	if p.Len() != 5 {
+		t.Errorf("Pool size is expected to be 5, got %d", p.Len())
+	}
+
+	err = p.Supply(2)
+	if err != nil {
+		t.Error(err)
+	}
+	if p.Len() != 5 {
+		t.Errorf("Pool size is expected to be 5, got %d", p.Len())
+	}
 }
 
 func newChannelPool() (Pool, error) {
