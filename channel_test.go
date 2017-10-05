@@ -87,7 +87,7 @@ func TestPool_Get(t *testing.T) {
 }
 
 func TestPool_Put(t *testing.T) {
-	p, err := NewChannelPool(0, 30, factory)
+	p, err := NewChannelPool(0, MaximumCap, factory)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -142,7 +142,7 @@ func TestPool_PutUnusableConn(t *testing.T) {
 	}
 	conn.Close()
 	if p.Len() != poolSize-1 {
-		t.Errorf("Pool size is expected to be initial_size - 1", p.Len(), poolSize-1)
+		t.Errorf("Pool size is expected to be initial_size - 1. Expecting %d, got %d", p.Len(), poolSize-1)
 	}
 }
 
@@ -208,7 +208,7 @@ func TestPoolConcurrent(t *testing.T) {
 }
 
 func TestPoolWriteRead(t *testing.T) {
-	p, _ := NewChannelPool(0, 30, factory)
+	p, _ := NewChannelPool(0, MaximumCap, factory)
 
 	conn, _ := p.Get()
 
@@ -220,7 +220,7 @@ func TestPoolWriteRead(t *testing.T) {
 }
 
 func TestPoolConcurrent2(t *testing.T) {
-	p, _ := NewChannelPool(0, 30, factory)
+	p, _ := NewChannelPool(0, MaximumCap, factory)
 
 	var wg sync.WaitGroup
 
@@ -240,6 +240,27 @@ func TestPoolConcurrent2(t *testing.T) {
 		wg.Add(1)
 		go func(i int) {
 			conn, _ := p.Get()
+			time.Sleep(time.Millisecond * time.Duration(rand.Intn(100)))
+			conn.Close()
+			wg.Done()
+		}(i)
+	}
+
+	wg.Wait()
+}
+
+func TestPoolConcurrentLimited(t *testing.T) {
+	p, _ := NewChannelPoolMaxActive(0, 2, 4, factory)
+
+	var wg sync.WaitGroup
+
+	for i := 0; i < 30; i++ {
+		wg.Add(1)
+		go func(i int) {
+			conn, _ := p.Get()
+			if p.LenActives() > 4 {
+				t.Log("LenActives() error, should be less than max active.")
+			}
 			time.Sleep(time.Millisecond * time.Duration(rand.Intn(100)))
 			conn.Close()
 			wg.Done()

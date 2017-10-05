@@ -54,7 +54,22 @@ p.Close()
 // currently available connections in the pool
 current := p.Len()
 ```
+## Example (active connection limit)
+```go
 
+// create a new channel based pool with an initial capacity of 5, maximum
+// capacity of 30 and a limit of 40. The factory will create 5 initial connections
+// and put it into the pool.
+p, err := pool.NewChannelPoolMaxActive(5, 30, 40, factory)
+
+// now you can get a connection from the pool, if there is no connection
+// available and you haven't reached the limit (40) it will create a new one 
+// via the factory function, otherwise it blocks until there is an available connection.
+conn, err := p.Get()
+
+// currently active connections in the pool
+actives := p.LenActives()
+```
 
 ## Credits
 
