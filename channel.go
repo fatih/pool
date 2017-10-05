@@ -57,6 +57,26 @@ func (c *channelPool) getConns() chan net.Conn {
 	return conns
 }
 
+func (c *channelPool) Supply(requireConnNum int) error {
+	chanCap := cap(c.conns)
+	l := c.Len()
+	if chanCap < requireConnNum {
+		requireConnNum = chanCap
+	}
+	if l >= requireConnNum {
+		return nil
+	}
+	for i := l; i < requireConnNum; i++ {
+		conn, err := c.factory()
+		if err != nil {
+			c.Close()
+			return fmt.Errorf("factory is not able to fill the pool: %s", err)
+		}
+		c.conns <- conn
+	}
+	return nil
+}
+
 // Get implements the Pool interfaces Get() method. If there is no new
 // connection available in the pool, a new connection will be created via the
 // Factory() method.

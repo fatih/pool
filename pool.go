@@ -19,6 +19,9 @@ type Pool interface {
 	// be counted as an error.
 	Get() (net.Conn, error)
 
+	// Supply connections to the pool at most the cap of channel buffer.
+	Supply(int) error
+
 	// Close closes the pool and all its connections. After Close() the pool is
 	// no longer usable.
 	Close()
