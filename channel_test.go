@@ -249,6 +249,24 @@ func TestPoolConcurrent2(t *testing.T) {
 	wg.Wait()
 }
 
+func TestPoolConcurrent3(t *testing.T) {
+	p, _ := NewChannelPool(0, 1, factory)
+
+	var wg sync.WaitGroup
+
+	wg.Add(1)
+	go func() {
+		p.Close()
+		wg.Done()
+	}()
+
+	if conn, err := p.Get(); err == nil {
+		conn.Close()
+	}
+
+	wg.Wait()
+}
+
 func newChannelPool() (Pool, error) {
 	return NewChannelPool(InitialCap, MaximumCap, factory)
 }
