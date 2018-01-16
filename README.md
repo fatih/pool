@@ -1,4 +1,4 @@
-# Pool [![GoDoc](http://img.shields.io/badge/go-documentation-blue.svg?style=flat-square)](https://godoc.org/gopkg.in/fatih/pool.v2) [![Build Status](http://img.shields.io/travis/fatih/pool.svg?style=flat-square)](https://travis-ci.org/fatih/pool)
+# Pool [![GoDoc](http://img.shields.io/badge/go-documentation-blue.svg?style=flat-square)](https://godoc.org/github.com/fatih/pool) [![Build Status](http://img.shields.io/travis/fatih/pool.svg?style=flat-square)](https://travis-ci.org/fatih/pool)
 
 
 Pool is a thread safe connection pool for net.Conn interface. It can be used to
@@ -10,16 +10,12 @@ manage and reuse connections.
 Install the package with:
 
 ```bash
-go get gopkg.in/fatih/pool.v2
+go get github.com/fatih/pool
 ```
 
-Import it with:
+Please vendor the package with one of the releases: https://github.com/fatih/pool/releases.
+`master` branch is **development** branch and will contain always the latest changes.
 
-```go
-import "gopkg.in/fatih/pool.v2"
-```
-
-and use `pool` as the package name inside the code.
 
 ## Example
 
