@@ -10,7 +10,7 @@ import (
 // channelPool implements the Pool interface based on buffered channels.
 type channelPool struct {
 	// storage for our net.Conn connections
-	mu    sync.Mutex
+	mu    sync.RWMutex
 	conns chan net.Conn
 
 	// net.Conn generator
@@ -51,10 +51,10 @@ func NewChannelPool(initialCap, maxCap int, factory Factory) (Pool, error) {
 }
 
 func (c *channelPool) getConnsAndFactory() (chan net.Conn, Factory) {
-	c.mu.Lock()
+	c.mu.RLock()
 	conns := c.conns
 	factory := c.factory
-	c.mu.Unlock()
+	c.mu.RUnlock()
 	return conns, factory
 }
 
@@ -93,8 +93,8 @@ func (c *channelPool) put(conn net.Conn) error {
 		return errors.New("connection is nil. rejecting")
 	}
 
-	c.mu.Lock()
-	defer c.mu.Unlock()
+	c.mu.RLock()
+	defer c.mu.RUnlock()
 
 	if c.conns == nil {
 		// pool is closed, close passed connection
