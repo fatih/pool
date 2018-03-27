@@ -11,7 +11,7 @@ import (
 type channelPool struct {
 	// storage for our net.Conn connections
 	mu    sync.RWMutex
-	conns chan net.Conn
+	conns chan *PoolConn
 
 	// net.Conn generator
 	factory Factory
@@ -32,7 +32,7 @@ func NewChannelPool(initialCap, maxCap int, factory Factory) (Pool, error) {
 	}
 
 	c := &channelPool{
-		conns:   make(chan net.Conn, maxCap),
+		conns:   make(chan *PoolConn, maxCap),
 		factory: factory,
 	}
 
@@ -44,13 +44,13 @@ func NewChannelPool(initialCap, maxCap int, factory Factory) (Pool, error) {
 			c.Close()
 			return nil, fmt.Errorf("factory is not able to fill the pool: %s", err)
 		}
-		c.conns <- conn
+		c.conns <- c.wrapConn(conn)
 	}
 
 	return c, nil
 }
 
-func (c *channelPool) getConnsAndFactory() (chan net.Conn, Factory) {
+func (c *channelPool) getConnsAndFactory() (chan *PoolConn, Factory) {
 	c.mu.RLock()
 	conns := c.conns
 	factory := c.factory
@@ -75,7 +75,7 @@ func (c *channelPool) Get() (net.Conn, error) {
 			return nil, ErrClosed
 		}
 
-		return c.wrapConn(conn), nil
+		return conn, nil
 	default:
 		conn, err := factory()
 		if err != nil {
@@ -88,7 +88,7 @@ func (c *channelPool) Get() (net.Conn, error) {
 
 // put puts the connection back to the pool. If the pool is full or closed,
 // conn is simply closed. A nil conn will be rejected.
-func (c *channelPool) put(conn net.Conn) error {
+func (c *channelPool) put(conn *PoolConn) error {
 	if conn == nil {
 		return errors.New("connection is nil. rejecting")
 	}
@@ -98,7 +98,7 @@ func (c *channelPool) put(conn net.Conn) error {
 
 	if c.conns == nil {
 		// pool is closed, close passed connection
-		return conn.Close()
+		return conn.Conn.Close()
 	}
 
 	// put the resource back into the pool. If the pool is full, this will
@@ -108,7 +108,7 @@ func (c *channelPool) put(conn net.Conn) error {
 		return nil
 	default:
 		// pool is full, close passed connection
-		return conn.Close()
+		return conn.Conn.Close()
 	}
 }
 
@@ -125,7 +125,7 @@ func (c *channelPool) Close() {
 
 	close(conns)
 	for conn := range conns {
-		conn.Close()
+		conn.Conn.Close()
 	}
 }
 

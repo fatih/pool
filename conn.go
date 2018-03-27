@@ -25,7 +25,7 @@ func (p *PoolConn) Close() error {
 		}
 		return nil
 	}
-	return p.c.put(p.Conn)
+	return p.c.put(p)
 }
 
 // MarkUnusable() marks the connection not usable any more, to let the pool close it instead of returning it to pool.
@@ -36,7 +36,7 @@ func (p *PoolConn) MarkUnusable() {
 }
 
 // newConn wraps a standard net.Conn to a poolConn net.Conn.
-func (c *channelPool) wrapConn(conn net.Conn) net.Conn {
+func (c *channelPool) wrapConn(conn net.Conn) *PoolConn {
 	p := &PoolConn{c: c}
 	p.Conn = conn
 	return p
